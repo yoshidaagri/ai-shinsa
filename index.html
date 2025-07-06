@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI審査員システム - ピッチ評価</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 AI審査員システム - ピッチ評価</h1>
+            <p class="subtitle">学生のピッチ発表を多角的に評価・分析</p>
+            <div class="header-actions">
+                <button id="showHistory" class="header-btn">
+                    <span class="btn-icon">📚</span>
+                    評価履歴
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- API Key設定 -->
+            <section class="api-key-section">
+                <h2>OpenAI API Key設定</h2>
+                <div class="api-key-input">
+                    <input type="password" id="apiKey" placeholder="OpenAI API Keyを入力してください" />
+                    <button id="saveApiKey">設定保存</button>
+                </div>
+                <p class="api-key-note">※APIキーはブラウザにローカル保存されます。外部には送信されません。</p>
+            </section>
+
+            <!-- 審査員選択 -->
+            <section class="judge-selection">
+                <h2>審査員を選択</h2>
+                <div class="judge-grid">
+                    <div class="judge-card" data-judge="professor">
+                        <div class="judge-icon">🎓</div>
+                        <div class="judge-name">大学教員</div>
+                        <div class="judge-desc">学術的・教育的観点</div>
+                    </div>
+                    <div class="judge-card" data-judge="entrepreneur">
+                        <div class="judge-icon">💼</div>
+                        <div class="judge-name">実業家</div>
+                        <div class="judge-desc">実践的・市場性重視</div>
+                    </div>
+                    <div class="judge-card" data-judge="vc">
+                        <div class="judge-icon">💰</div>
+                        <div class="judge-name">VC</div>
+                        <div class="judge-desc">投資価値・スケーラビリティ</div>
+                    </div>
+                    <div class="judge-card" data-judge="tech_expert">
+                        <div class="judge-icon">💻</div>
+                        <div class="judge-name">IT専門家</div>
+                        <div class="judge-desc">技術的実現性・デジタル化</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ファイルアップロード -->
+            <section class="file-upload">
+                <h2>ファイルアップロード</h2>
+                <p class="upload-note">※スライドまたはピッチ音声のいずれか一方だけでも分析可能です</p>
+                <div class="upload-area">
+                    <div class="upload-column">
+                        <h3>スライド資料</h3>
+                        <div class="upload-box" id="slideUpload">
+                            <div class="upload-icon">📄</div>
+                            <p>スライドをドラッグ&ドロップ</p>
+                            <p class="upload-formats">PDF, PowerPoint(.ppt/.pptx) (最大25MB)</p>
+                            <input type="file" id="slideFile" accept=".pdf,.ppt,.pptx" hidden>
+                            <button type="button" onclick="document.getElementById('slideFile').click()">ファイルを選択</button>
+                        </div>
+                        <div class="preview-area" id="slidePreview" style="display:none;">
+                            <h4>プレビュー</h4>
+                            <div class="preview-content"></div>
+                        </div>
+                    </div>
+
+                    <div class="upload-column">
+                        <h3>ピッチ音声</h3>
+                        <div class="upload-box" id="audioUpload">
+                            <div class="upload-icon">🎵</div>
+                            <p>ピッチ音声を選択または録音</p>
+                            <p class="upload-formats">MP3, WAV, M4A (最大25MB)</p>
+                            <div class="audio-controls">
+                                <input type="file" id="audioFile" accept=".mp3,.wav,.m4a" hidden>
+                                <button type="button" onclick="document.getElementById('audioFile').click()">ファイルを選択</button>
+                                <button type="button" id="recordBtn" class="record-btn">🎤 録音開始</button>
+                            </div>
+                        </div>
+                        <div class="recording-area" id="recordingArea" style="display:none;">
+                            <h4>録音中...</h4>
+                            <div class="recording-controls">
+                                <button id="stopRecordBtn" class="stop-record-btn">⏹️ 録音停止</button>
+                                <div class="recording-timer">00:00</div>
+                            </div>
+                            <div class="recording-level">
+                                <div class="level-bar" id="levelBar"></div>
+                            </div>
+                        </div>
+                        <div class="preview-area" id="audioPreview" style="display:none;">
+                            <h4>プレビュー</h4>
+                            <audio controls class="audio-player"></audio>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 分析開始ボタン -->
+            <section class="analysis-control">
+                <button id="startAnalysis" class="start-btn" disabled>
+                    <span class="btn-icon">🚀</span>
+                    分析開始
+                </button>
+            </section>
+
+            <!-- 分析結果 -->
+            <section class="analysis-results" id="results" style="display:none;">
+                <h2>分析結果</h2>
+                <div class="results-tabs">
+                    <div class="tab-buttons" id="tabButtons">
+                        <!-- タブボタンは動的に生成 -->
+                    </div>
+                    <div class="tab-content" id="tabContent">
+                        <!-- 結果内容は動的に生成 -->
+                    </div>
+                </div>
+                <div class="results-actions">
+                    <button id="toggleCompareMode" class="action-btn compare-btn">
+                        <span class="btn-icon">📊</span>
+                        比較表示
+                    </button>
+                    <button id="exportResults" class="action-btn">
+                        <span class="btn-icon">📤</span>
+                        エクスポート
+                    </button>
+                    <button id="reAnalysis" class="action-btn">
+                        <span class="btn-icon">🔄</span>
+                        再分析
+                    </button>
+                </div>
+            </section>
+
+            <!-- ローディング -->
+            <div class="loading" id="loading" style="display:none;">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">AI審査員が分析中...</p>
+                <div class="loading-progress">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 AI審査員システム - 学生のピッチ評価をサポート</p>
+            <div class="debug-info" style="margin-top: 10px; font-size: 0.8em; color: rgba(255,255,255,0.6);">
+                問題が発生した場合：F12キーでコンソールを開き、<code>debugApp()</code> または <code>testAudio()</code> を実行してください
+            </div>
+        </footer>
+    </div>
+
+    <!-- 外部ライブラリ -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <!-- アプリケーションスクリプト -->
+    <script src="config.js"></script>
+    <script src="judges/personalities.js"></script>
+    <script src="utils/pdfProcessor.js"></script>
+    <script src="utils/powerpointProcessor.js"></script>
+    <script src="utils/fileHandler.js"></script>
+    <script src="utils/apiClient.js"></script>
+    <script src="utils/uiController.js"></script>
+    <script src="utils/judgeSelector.js"></script>
+    <script src="utils/voiceController.js"></script>
+    <script src="utils/animationController.js"></script>
+    <script src="utils/historyManager.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
