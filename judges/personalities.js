@@ -1,5 +1,120 @@
 // AI審査員システム - 審査員パーソナリティ定義
 
+// コンテンツ適応型質問生成フレームワーク
+const CONTENT_ANALYSIS_FRAMEWORK = {
+    
+    // Step 1: コンテンツ分析
+    analyzeContent: function(slideContent, audioContent) {
+        const analysis = {
+            socialIssue: this.extractSocialIssue(slideContent),
+            solutionApproach: this.extractSolution(slideContent),
+            methodology: this.extractMethodology(audioContent),
+            dataPresented: this.extractData(slideContent),
+            theoreticalFramework: this.extractTheory(audioContent),
+            gaps: this.identifyLogicalGaps(slideContent, audioContent),
+            passionLevel: this.extractPassion(audioContent),
+            originalityMarkers: this.extractOriginality(slideContent, audioContent)
+        };
+        return analysis;
+    },
+    
+    // Step 2: Gap分析による質問生成
+    generateQuestions: function(analysis, judgeType = 'professor') {
+        const questions = [];
+        
+        if (judgeType === 'professor') {
+            // 理論的基盤の不足を検出
+            if (!analysis.theoreticalFramework && analysis.socialIssue) {
+                questions.push(
+                    `${analysis.socialIssue}について、どのような理論的枠組みで分析されましたか？社会学的な観点では関連する理論も参考になるかもしれません。`
+                );
+            }
+            
+            // データの妥当性問題を検出
+            if (analysis.dataPresented && !analysis.methodology) {
+                questions.push(
+                    `提示されたデータについて、サンプリング方法や調査設計はどのように検討されましたか？`
+                );
+            }
+            
+            // 先行研究との関連性不足を検出
+            if (analysis.solutionApproach && !analysis.theoreticalFramework) {
+                questions.push(
+                    `${analysis.solutionApproach}というアプローチは興味深いですね。類似の取り組みを行った先行研究はどのようなものがありましたか？`
+                );
+            }
+            
+            // 学習の深まりを促す質問
+            if (analysis.passionLevel && analysis.originalityMarkers) {
+                questions.push(
+                    `この研究で最も新しい発見や気づきは何でしたか？それがあなたの考え方をどう変えましたか？`
+                );
+            }
+            
+            // 社会的インパクトへの考察を促す
+            if (analysis.socialIssue && analysis.solutionApproach) {
+                questions.push(
+                    `この解決策が実現したとき、社会にどのような変化をもたらすと期待していますか？`
+                );
+            }
+        }
+        
+        return questions.slice(0, 3); // 最大3つの質問に絞る
+    },
+    
+    // 補助関数群
+    extractSocialIssue: function(content) {
+        if (!content) return null;
+        const keywords = ['問題', '課題', '社会', '困難', '解決', 'issue', 'problem'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword)) ? 
+               content.substring(0, 100) : null;
+    },
+    
+    extractSolution: function(content) {
+        if (!content) return null;
+        const keywords = ['解決', '提案', '改善', '新しい', 'solution', 'approach'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword)) ? 
+               content.substring(0, 100) : null;
+    },
+    
+    extractMethodology: function(content) {
+        if (!content) return null;
+        const keywords = ['方法', '手法', '調査', '分析', '研究', 'method', 'research'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+    
+    extractData: function(content) {
+        if (!content) return null;
+        const keywords = ['データ', '統計', '調査結果', '数値', 'data', 'statistics'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+    
+    extractTheory: function(content) {
+        if (!content) return null;
+        const keywords = ['理論', '学説', '研究', '文献', 'theory', 'framework'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+    
+    extractPassion: function(content) {
+        if (!content) return null;
+        const keywords = ['重要', '必要', '改善したい', '解決したい', '思う', '考える'];
+        return keywords.some(keyword => content.includes(keyword));
+    },
+    
+    extractOriginality: function(slideContent, audioContent) {
+        const content = (slideContent || '') + (audioContent || '');
+        const keywords = ['新しい', '独自', '工夫', '発想', '違う', 'unique', 'original'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+    
+    identifyLogicalGaps: function(slideContent, audioContent) {
+        const gaps = [];
+        if (slideContent && !audioContent) gaps.push('audio_missing');
+        if (audioContent && !slideContent) gaps.push('slide_missing');
+        return gaps;
+    }
+};
+
 const JUDGE_PERSONALITIES = {
     professor: {
         name: "大学教員",
@@ -20,6 +135,13 @@ const JUDGE_PERSONALITIES = {
         systemPrompt: `
 あなたは大学で社会問題研究を専門とする教授です。
 学生のピッチを教育的観点から評価してください。
+
+【重要：動的質問生成について】
+- 提供される発表内容を分析し、その内容に応じた具体的で個別化された質問を生成してください
+- 一般的な質問ではなく、学生の発表内容に直接関連する質問を心がけてください
+- 学生の研究の弱点や改善点を特定し、それを補完する質問を提示してください
+- 理論的な裏付けが不足している場合は、関連理論について尋ねてください
+- データや方法論に問題がある場合は、それを改善するための質問をしてください
 
 【評価観点】
 - 社会課題の学術的理解の深さ
@@ -51,7 +173,19 @@ const JUDGE_PERSONALITIES = {
             "研究方法論についてどのように考えましたか？質的・量的手法の選択理由を教えてください。",
             "研究倫理やデータ保護についてどのような配慮をしていますか？",
             "この研究を発展させるための次のステップはどのようなものですか？"
-        ]
+        ],
+        // 動的質問生成機能
+        generateAdaptiveQuestions: function(slideContent, audioContent) {
+            const analysis = CONTENT_ANALYSIS_FRAMEWORK.analyzeContent(slideContent, audioContent);
+            const dynamicQuestions = CONTENT_ANALYSIS_FRAMEWORK.generateQuestions(analysis, 'professor');
+            
+            // 動的質問が生成されない場合は基本質問を選択
+            if (dynamicQuestions.length === 0) {
+                return this.sampleQuestions.slice(0, 3);
+            }
+            
+            return dynamicQuestions;
+        }
     },
     
     entrepreneur: {
@@ -500,12 +634,42 @@ try {
     console.error('パーソナリティ検証エラー:', error.message);
 }
 
+// 動的質問生成機能を利用するヘルパー関数
+function generateDynamicQuestions(judgeType, slideContent, audioContent) {
+    const judge = JUDGE_PERSONALITIES[judgeType];
+    
+    if (judge && judge.generateAdaptiveQuestions) {
+        return judge.generateAdaptiveQuestions(slideContent, audioContent);
+    }
+    
+    // 動的質問生成機能がない場合は基本質問を返す
+    return judge?.sampleQuestions?.slice(0, 3) || [];
+}
+
+// 使用例:
+// const dynamicQuestions = generateDynamicQuestions('professor', 
+//     '高齢化社会の問題について新しいアプリで解決したい', 
+//     '私は祖父が一人暮らしで心配になったことがきっかけで...');
+//
+// 結果例:
+// [
+//     "高齢化社会の問題について、どのような理論的枠組みで分析されましたか？社会学的な観点では関連する理論も参考になるかもしれません。",
+//     "新しいアプリというアプローチは興味深いですね。類似の取り組みを行った先行研究はどのようなものがありましたか？",
+//     "この解決策が実現したとき、社会にどのような変化をもたらすと期待していますか？"
+// ]
+
+// コンテンツ分析機能
+function analyzeContent(slideContent, audioContent) {
+    return CONTENT_ANALYSIS_FRAMEWORK.analyzeContent(slideContent, audioContent);
+}
+
 // エクスポート（ES6 modules使用時）
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         JUDGE_PERSONALITIES,
         JUDGE_EVALUATION_TEMPLATES,
         PROMPTS,
+        CONTENT_ANALYSIS_FRAMEWORK,
         getJudgeDetails,
         getAllJudges,
         getVoiceSettings,
@@ -513,6 +677,8 @@ if (typeof module !== 'undefined' && module.exports) {
         getJudgeSpecialties,
         getEvaluationStyle,
         generatePrompt,
-        validatePersonalities
+        validatePersonalities,
+        generateDynamicQuestions,
+        analyzeContent
     };
 }
