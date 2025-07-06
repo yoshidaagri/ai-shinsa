@@ -26,6 +26,32 @@ class UIController {
         this.animateProgressBar();
     }
 
+    // 進捗付きローディング表示
+    showLoadingWithProgress(message, currentStep, totalSteps) {
+        const loadingElement = document.getElementById('loading');
+        const textElement = loadingElement.querySelector('.loading-text');
+        
+        // メッセージに進捗情報を追加
+        const progressText = `${message} (${currentStep}/${totalSteps})`;
+        textElement.textContent = progressText;
+        
+        loadingElement.style.display = 'flex';
+        this.isLoading = true;
+        
+        // プログレスバーを段階的に更新
+        this.updateProgressBar(currentStep, totalSteps);
+    }
+
+    // プログレスバーの段階的更新
+    updateProgressBar(currentStep, totalSteps) {
+        const progressBar = document.querySelector('.progress-bar');
+        if (progressBar) {
+            const percentage = (currentStep / totalSteps) * 100;
+            progressBar.style.width = `${percentage}%`;
+            progressBar.style.transition = 'width 0.5s ease-in-out';
+        }
+    }
+
     // ローディング非表示
     hideLoading() {
         const loadingElement = document.getElementById('loading');

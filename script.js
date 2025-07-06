@@ -277,6 +277,22 @@ class AIJudgeApp {
         }
     }
 
+    // 総ステップ数を計算
+    calculateTotalSteps(selectedJudges) {
+        let steps = 1; // 1. 分析開始
+        
+        // ファイル分析ステップ
+        if (this.uploadedFiles.audio) steps++; // 2. 音声解析
+        if (this.uploadedFiles.slide) steps++; // 3. スライド解析
+        
+        // 審査員評価ステップ
+        steps += selectedJudges.length; // 各審査員の評価
+        
+        steps++; // 最後の結果表示
+        
+        return steps;
+    }
+
     async startAnalysis() {
         console.log('🚀 分析開始:', {
             hasApiKey: !!this.apiKey,
@@ -285,7 +301,12 @@ class AIJudgeApp {
             hasAudio: !!this.uploadedFiles.audio
         });
         
-        this.uiController.showLoading();
+        // 進捗計算の準備
+        const selectedJudges = this.judgeSelector.getSelectedJudges();
+        const totalSteps = this.calculateTotalSteps(selectedJudges);
+        let currentStep = 0;
+        
+        this.uiController.showLoadingWithProgress('分析を開始中...', ++currentStep, totalSteps);
         
         try {
             // APIクライアントの初期化
@@ -296,11 +317,7 @@ class AIJudgeApp {
                 throw new Error('無効なAPIキー形式です。OpenAI APIキーは "sk-" で始まる必要があります。');
             }
             
-            // 選択された審査員を取得
-            const selectedJudges = this.judgeSelector.getSelectedJudges();
             console.log('📋 選択された審査員:', selectedJudges);
-            
-            this.uiController.showLoading('ファイルを解析中...');
             
             // 利用可能なファイルのみを分析
             const analysisPromises = [];
@@ -308,11 +325,13 @@ class AIJudgeApp {
             let slideAnalysis = null;
             
             if (this.uploadedFiles.audio) {
+                this.uiController.showLoadingWithProgress('音声ファイルを解析中...', ++currentStep, totalSteps);
                 console.log('🎵 音声ファイル分析開始:', this.uploadedFiles.audio.name);
                 analysisPromises.push(this.analyzeAudio(apiClient));
             }
             
             if (this.uploadedFiles.slide) {
+                this.uiController.showLoadingWithProgress('スライドファイルを解析中...', ++currentStep, totalSteps);
                 console.log('📄 スライドファイル分析開始:', this.uploadedFiles.slide.name);
                 analysisPromises.push(this.analyzeSlide(apiClient));
             }
@@ -331,14 +350,12 @@ class AIJudgeApp {
                 console.log('📄 スライド分析結果:', slideAnalysis);
             }
             
-            this.uiController.showLoading('AI審査員が評価中...');
-            
-            // 各審査員による評価生成（シンプル）
+            // 各審査員による評価生成（進捗付き）
             const judgeResults = [];
             
-            for (const judgeType of selectedJudges) {
+            for (const [index, judgeType] of selectedJudges.entries()) {
                 console.log(`👩‍⚖️ ${judgeType} 評価開始`);
-                this.uiController.showLoading(`${JUDGE_PERSONALITIES[judgeType].name}が評価中...`);
+                this.uiController.showLoadingWithProgress(`${JUDGE_PERSONALITIES[judgeType].name}が評価中...`, ++currentStep, totalSteps);
                 const result = await this.generateJudgeEvaluation(apiClient, judgeType, audioAnalysis, slideAnalysis);
                 
                 console.log(`✅ ${judgeType} 評価完了:`, result);
@@ -346,6 +363,7 @@ class AIJudgeApp {
             }
             
             // 結果の保存と表示
+            this.uiController.showLoadingWithProgress('結果を表示中...', ++currentStep, totalSteps);
             this.analysisResults = {};
             judgeResults.forEach((result, index) => {
                 const judgeType = selectedJudges[index];
@@ -851,6 +869,18 @@ class AIJudgeApp {
             
             tabContent.appendChild(content);
             
+            // 音声コントロールを追加
+            if (this.voiceController) {
+                setTimeout(() => {
+                    try {
+                        this.voiceController.createVoiceControls(judgeType, `voice-controls-${judgeType}`);
+                        console.log(`🔊 ${judgeType} の音声コントロール追加完了`);
+                    } catch (error) {
+                        console.warn(`⚠️ ${judgeType} の音声コントロール追加失敗:`, error);
+                    }
+                }, 100);
+            }
+            
             console.log(`📋 ${judgeType} タブ追加完了:`, {
                 id: content.id,
                 className: content.className,
@@ -934,21 +964,10 @@ class AIJudgeApp {
                 </div>
                 
                 <div class="voice-controls-container">
-                    <h4>🔊 質問音声</h4>
-                    <div class="voice-controls">
-                        <button class="voice-btn play-btn" onclick="window.app.playQuestionAudio('${result.judgeType}')">
-                            🎵 質問を聞く
-                        </button>
-                        <button class="voice-btn stop-btn" onclick="window.app.stopAudio()">
-                            ⏹️ 停止
-                        </button>
-                        <div class="volume-control">
-                            <label>音量:</label>
-                            <input type="range" min="0" max="1" step="0.1" value="0.8" 
-                                   onchange="window.app.setVolume(this.value)" class="volume-slider">
-                        </div>
+                    <h4>🔊 音声コントロール</h4>
+                    <div id="voice-controls-${result.judgeType}">
+                        <!-- VoiceControllerが新しい音声コントロールを動的に生成 -->
                     </div>
-                    <div id="voice-status-${result.judgeType}" class="voice-status"></div>
                 </div>
             `;
         } catch (error) {
@@ -973,7 +992,10 @@ class AIJudgeApp {
                 </div>
                 
                 <div class="voice-controls-container">
-                    <p>音声機能は利用できません</p>
+                    <h4>🔊 音声コントロール</h4>
+                    <div id="voice-controls-${result.judgeType}">
+                        <p>音声機能は利用できません</p>
+                    </div>
                 </div>
             `;
         }

@@ -177,6 +177,11 @@ class VoiceController {
             this.currentAudio.currentTime = 0;
             this.currentAudio = null;
             this.isPlaying = false;
+            
+            // すべてのステータス表示を「停止」に更新
+            document.querySelectorAll('.voice-status').forEach(statusElement => {
+                this.updateStatus(statusElement, 'stopped', '音声を停止しました');
+            });
         }
     }
 
@@ -207,38 +212,52 @@ class VoiceController {
         
         const controlsHTML = `
             <div class="voice-controls" id="voice-controls-${judgeType}">
-                <button class="voice-btn play-btn" onclick="window.app.voiceController?.playJudgeQuestions('${judgeType}')">
-                    🔊 質問を聞く
-                </button>
-                <button class="voice-btn stop-btn" onclick="window.app.voiceController?.stopCurrentAudio()">
-                    ⏸️ 停止
-                </button>
-                <button class="voice-btn replay-btn" onclick="window.app.voiceController?.replayLastAudio()">
-                    🔄 再生
-                </button>
-                
-                <div class="volume-control">
-                    <label>🔊</label>
-                    <input type="range" min="0" max="1" step="0.1" value="${this.volume}" 
-                           onchange="window.app.voiceController?.setVolume(this.value)" class="volume-slider">
-                    <span class="volume-value">${Math.round(this.volume * 100)}%</span>
+                <div class="voice-buttons">
+                    <button class="voice-btn feedback-btn" onclick="window.app.voiceController?.playJudgeFeedback('${judgeType}')" title="ポジティブフィードバックを聞く">
+                        💬 フィードバック
+                    </button>
+                    <button class="voice-btn question-btn" onclick="window.app.voiceController?.playJudgeQuestions('${judgeType}')" title="深掘り質問を聞く">
+                        ❓ 質問
+                    </button>
+                    <button class="voice-btn stop-btn" onclick="window.app.voiceController?.stopCurrentAudio()" title="音声を停止">
+                        ⏸️ 停止
+                    </button>
                 </div>
                 
-                <div class="speed-control">
-                    <label>⚡</label>
-                    <select onchange="window.app.voiceController?.setPlaybackSpeed(this.value)" class="speed-selector">
-                        <option value="0.5" ${this.playbackSpeed === 0.5 ? 'selected' : ''}>0.5x</option>
-                        <option value="0.75" ${this.playbackSpeed === 0.75 ? 'selected' : ''}>0.75x</option>
-                        <option value="1.0" ${this.playbackSpeed === 1.0 ? 'selected' : ''}>1.0x</option>
-                        <option value="1.25" ${this.playbackSpeed === 1.25 ? 'selected' : ''}>1.25x</option>
-                        <option value="1.5" ${this.playbackSpeed === 1.5 ? 'selected' : ''}>1.5x</option>
-                        <option value="2.0" ${this.playbackSpeed === 2.0 ? 'selected' : ''}>2.0x</option>
-                    </select>
-                    <span class="speed-value">${this.playbackSpeed}x</span>
+                <div class="voice-controls-row">
+                    <div class="volume-control">
+                        <label>🔊</label>
+                        <input type="range" min="0" max="1" step="0.1" value="${this.volume}" 
+                               onchange="window.app.voiceController?.setVolume(this.value)" class="volume-slider">
+                        <span class="volume-value">${Math.round(this.volume * 100)}%</span>
+                    </div>
+                    
+                    <div class="speed-control">
+                        <label>⚡</label>
+                        <select onchange="window.app.voiceController?.setPlaybackSpeed(this.value)" class="speed-selector">
+                            <option value="0.5" ${this.playbackSpeed === 0.5 ? 'selected' : ''}>0.5x</option>
+                            <option value="0.75" ${this.playbackSpeed === 0.75 ? 'selected' : ''}>0.75x</option>
+                            <option value="1.0" ${this.playbackSpeed === 1.0 ? 'selected' : ''}>1.0x</option>
+                            <option value="1.25" ${this.playbackSpeed === 1.25 ? 'selected' : ''}>1.25x</option>
+                            <option value="1.5" ${this.playbackSpeed === 1.5 ? 'selected' : ''}>1.5x</option>
+                            <option value="2.0" ${this.playbackSpeed === 2.0 ? 'selected' : ''}>2.0x</option>
+                        </select>
+                        <span class="speed-value">${this.playbackSpeed}x</span>
+                    </div>
                 </div>
                 
                 <div class="voice-status" id="voice-status-${judgeType}">
-                    準備完了
+                    <div class="status-indicator">
+                        <div class="status-icon">⚪</div>
+                        <div class="status-text">準備完了</div>
+                    </div>
+                    <div class="progress-indicator" style="display: none;">
+                        <div class="progress-dots">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -252,8 +271,6 @@ class VoiceController {
         const statusElement = document.getElementById(`voice-status-${judgeType}`);
         
         try {
-            this.updateStatus(statusElement, 'generating', `${personality.name}の音声生成中...`);
-            
             // 質問テキストを取得（実際の評価結果から抽出）
             const questions = this.extractQuestionsFromResult(judgeType);
             if (!questions) {
@@ -261,12 +278,52 @@ class VoiceController {
             }
             
             // 審査員の個性を反映した音声メッセージを追加
-            const introduction = this.getJudgeIntroduction(judgeType);
+            const introduction = this.getJudgeIntroduction(judgeType, 'questions');
             const fullText = introduction + questions;
             
-            this.updateStatus(statusElement, 'playing', `${personality.name}からの質問を再生中...`);
+            // キャッシュチェック
+            const cacheKey = this.generateCacheKey(fullText, personality);
+            if (this.audioCache.has(cacheKey)) {
+                this.updateStatus(statusElement, 'playing', `${personality.name}からの質問を再生中... (キャッシュから)`);
+            } else {
+                this.updateStatus(statusElement, 'generating', `${personality.name}の音声生成中... (TTS処理)`);
+            }
+            
             await this.playQuestions(fullText, personality);
-            this.updateStatus(statusElement, 'completed', '再生完了');
+            this.updateStatus(statusElement, 'completed', '質問の再生が完了しました');
+            
+        } catch (error) {
+            console.error('音声再生エラー:', error);
+            this.updateStatus(statusElement, 'error', 'エラー: ' + error.message);
+        }
+    }
+
+    // 審査員別フィードバック音声再生
+    async playJudgeFeedback(judgeType) {
+        const personality = JUDGE_PERSONALITIES[judgeType];
+        const statusElement = document.getElementById(`voice-status-${judgeType}`);
+        
+        try {
+            // フィードバックテキストを取得（実際の評価結果から抽出）
+            const feedback = this.extractFeedbackFromResult(judgeType);
+            if (!feedback) {
+                throw new Error('フィードバックが見つかりません');
+            }
+            
+            // 審査員の個性を反映した音声メッセージを追加
+            const introduction = this.getJudgeIntroduction(judgeType, 'feedback');
+            const fullText = introduction + feedback;
+            
+            // キャッシュチェック
+            const cacheKey = this.generateCacheKey(fullText, personality);
+            if (this.audioCache.has(cacheKey)) {
+                this.updateStatus(statusElement, 'playing', `${personality.name}からのフィードバックを再生中... (キャッシュから)`);
+            } else {
+                this.updateStatus(statusElement, 'generating', `${personality.name}の音声生成中... (TTS処理)`);
+            }
+            
+            await this.playQuestions(fullText, personality);
+            this.updateStatus(statusElement, 'completed', 'フィードバックの再生が完了しました');
             
         } catch (error) {
             console.error('音声再生エラー:', error);
@@ -275,15 +332,26 @@ class VoiceController {
     }
 
     // 審査員の導入メッセージを取得
-    getJudgeIntroduction(judgeType) {
+    getJudgeIntroduction(judgeType, contentType = 'questions') {
         const personality = JUDGE_PERSONALITIES[judgeType];
-        const introductions = {
-            professor: `${personality.name}として、学術的な観点から質問させていただきます。`,
-            entrepreneur: `${personality.name}として、実践的な視点から質問させていただきます。`,
-            vc: `${personality.name}として、投資家の観点から質問させていただきます。`,
-            tech_expert: `${personality.name}として、技術的な観点から質問させていただきます。`
-        };
-        return introductions[judgeType] || `${personality.name}から質問です。`;
+        
+        if (contentType === 'feedback') {
+            const feedbackIntroductions = {
+                professor: `${personality.name}として、学術的な観点から素晴らしい点をお伝えします。`,
+                entrepreneur: `${personality.name}として、実践的な視点から優れている点をお話しします。`,
+                vc: `${personality.name}として、投資家の観点から評価できる点をお伝えします。`,
+                tech_expert: `${personality.name}として、技術的な観点から優秀な部分をお話しします。`
+            };
+            return feedbackIntroductions[judgeType] || `${personality.name}からポジティブフィードバックです。`;
+        } else {
+            const questionIntroductions = {
+                professor: `${personality.name}として、学術的な観点から質問させていただきます。`,
+                entrepreneur: `${personality.name}として、実践的な視点から質問させていただきます。`,
+                vc: `${personality.name}として、投資家の観点から質問させていただきます。`,
+                tech_expert: `${personality.name}として、技術的な観点から質問させていただきます。`
+            };
+            return questionIntroductions[judgeType] || `${personality.name}から質問です。`;
+        }
     }
 
     // 評価結果から質問を抽出
@@ -318,19 +386,75 @@ class VoiceController {
         return fallbackQuestions.join('。 ');
     }
 
+    // 評価結果からポジティブフィードバックを抽出
+    extractFeedbackFromResult(judgeType) {
+        // アプリの結果データからポジティブフィードバックを抽出
+        if (window.app && window.app.analysisResults && window.app.analysisResults[judgeType]) {
+            const evaluation = window.app.analysisResults[judgeType].evaluation;
+            console.log(`${judgeType}の評価結果からフィードバック抽出:`, evaluation.substring(0, 200) + '...');
+            
+            // ポジティブフィードバック部分を抽出
+            const feedbackMatch = evaluation.match(/## 🎯 ポジティブフィードバック\s*([\s\S]*?)(?=## |$)/);
+            
+            if (feedbackMatch) {
+                const feedbacks = feedbackMatch[1]
+                    .split('\n')
+                    .filter(line => line.trim() && line.trim().startsWith('-'))
+                    .map(line => line.replace(/^-\s*/, '').trim())
+                    .filter(feedback => feedback && feedback.length > 0)
+                    .slice(0, 4); // 4つまでに制限
+                    
+                console.log(`${judgeType}の抽出されたフィードバック:`, feedbacks);
+                
+                if (feedbacks.length > 0) {
+                    return feedbacks.join('。 ');  // 句点で区切って自然な音声に
+                }
+            }
+        }
+        
+        // フォールバック: 基本的なポジティブメッセージ
+        const personality = JUDGE_PERSONALITIES[judgeType];
+        const fallbackMessages = [
+            'あなたの発表には独創性を感じました',
+            '社会問題への取り組み姿勢が素晴らしいです',
+            '実現への意欲が伝わってきます'
+        ];
+        console.log(`${judgeType}のフォールバック フィードバック使用`);
+        return fallbackMessages.join('。 ');
+    }
+
     // ステータス更新
     updateStatus(statusElement, status, message) {
         if (!statusElement) return;
         
         const statusText = statusElement.querySelector('.status-text');
+        const statusIcon = statusElement.querySelector('.status-icon');
         const progressIndicator = statusElement.querySelector('.progress-indicator');
+        
+        // ステータスアイコンとメッセージを更新
+        const statusConfig = {
+            'ready': { icon: '⚪', color: '#95a5a6' },
+            'generating': { icon: '🔄', color: '#f39c12' },
+            'playing': { icon: '🔊', color: '#2ecc71' },
+            'completed': { icon: '✅', color: '#27ae60' },
+            'error': { icon: '❌', color: '#e74c3c' },
+            'stopped': { icon: '⏸️', color: '#34495e' }
+        };
+        
+        const config = statusConfig[status] || statusConfig['ready'];
         
         if (statusText) {
             statusText.textContent = message;
         }
         
+        if (statusIcon) {
+            statusIcon.textContent = config.icon;
+            statusIcon.style.color = config.color;
+        }
+        
         statusElement.className = `voice-status status-${status}`;
         
+        // プログレスインジケーターの表示制御
         if (status === 'generating' || status === 'playing') {
             if (progressIndicator) {
                 progressIndicator.style.display = 'block';
@@ -339,6 +463,13 @@ class VoiceController {
             if (progressIndicator) {
                 progressIndicator.style.display = 'none';
             }
+        }
+        
+        // 完了時は少し遅らせて「準備完了」に戻す
+        if (status === 'completed') {
+            setTimeout(() => {
+                this.updateStatus(statusElement, 'ready', '準備完了');
+            }, 2000);
         }
     }
 
@@ -358,6 +489,40 @@ class VoiceController {
             }
         } catch (error) {
             console.error('一括再生エラー:', error);
+            throw error;
+        }
+    }
+
+    // 一括フィードバック音声再生
+    async playAllJudgesFeedback(selectedJudges) {
+        try {
+            for (const judgeType of selectedJudges) {
+                await this.playJudgeFeedback(judgeType);
+                // 次の審査員との間に少し間隔を空ける
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        } catch (error) {
+            console.error('一括フィードバック再生エラー:', error);
+            throw error;
+        }
+    }
+
+    // フィードバックと質問の両方を一括再生
+    async playAllJudgesComplete(selectedJudges) {
+        try {
+            for (const judgeType of selectedJudges) {
+                // フィードバックを先に再生
+                await this.playJudgeFeedback(judgeType);
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // 続いて質問を再生
+                await this.playJudgeQuestions(judgeType);
+                
+                // 次の審査員との間に少し間隔を空ける
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
+        } catch (error) {
+            console.error('一括完全再生エラー:', error);
             throw error;
         }
     }

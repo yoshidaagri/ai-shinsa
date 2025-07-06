@@ -877,9 +877,24 @@ section h2 {
 
 .voice-controls {
     display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.voice-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.voice-controls-row {
+    display: flex;
     align-items: center;
     gap: 15px;
     flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .voice-btn {
@@ -893,6 +908,28 @@ section h2 {
     display: flex;
     align-items: center;
     gap: 5px;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.feedback-btn {
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.feedback-btn:hover {
+    background: linear-gradient(45deg, #2ecc71, #27ae60);
+    transform: translateY(-1px);
+}
+
+.question-btn {
+    background: linear-gradient(45deg, #f39c12, #e67e22);
+    color: white;
+}
+
+.question-btn:hover {
+    background: linear-gradient(45deg, #e67e22, #f39c12);
+    transform: translateY(-1px);
 }
 
 .play-btn {
@@ -913,6 +950,108 @@ section h2 {
 .stop-btn:hover {
     background: linear-gradient(45deg, #c0392b, #e74c3c);
     transform: translateY(-1px);
+}
+
+/* 音声ステータス表示 */
+.voice-status {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85em;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.status-icon {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+.status-text {
+    font-weight: 500;
+}
+
+.voice-status.status-ready {
+    background: #f8f9fa;
+    color: #6c757d;
+    border-color: #dee2e6;
+}
+
+.voice-status.status-generating {
+    background: #fff3cd;
+    color: #856404;
+    border-color: #ffeaa7;
+}
+
+.voice-status.status-playing {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-color: #b6d4da;
+}
+
+.voice-status.status-completed {
+    background: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.voice-status.status-error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f1aeb5;
+}
+
+.voice-status.status-stopped {
+    background: #e2e3e5;
+    color: #383d41;
+    border-color: #d1d3d4;
+}
+
+/* プログレスインジケーター */
+.progress-indicator {
+    margin-top: 8px;
+}
+
+.progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+}
+
+.progress-dots .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3498db;
+    animation: blink 1.5s infinite;
+}
+
+.progress-dots .dot:nth-child(2) {
+    animation-delay: 0.3s;
+}
+
+.progress-dots .dot:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes blink {
+    0%, 80%, 100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .volume-control {
@@ -953,6 +1092,34 @@ section h2 {
     border: none;
 }
 
+.speed-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.speed-control label {
+    font-size: 0.9em;
+    color: #555;
+    font-weight: bold;
+}
+
+.speed-selector {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.speed-value, .volume-value {
+    font-size: 0.8em;
+    color: #666;
+    min-width: 30px;
+    text-align: center;
+}
+
 .voice-status {
     margin-top: 10px;
     padding: 8px;
@@ -962,6 +1129,31 @@ section h2 {
     font-size: 0.9em;
     color: #666;
     min-height: 20px;
+    text-align: center;
+}
+
+.voice-status.status-generating {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+.voice-status.status-playing {
+    background: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.voice-status.status-completed {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.voice-status.status-error {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
 }
 
 .results-actions {
@@ -1098,6 +1290,24 @@ section h2 {
     font-size: 1.2em;
     color: #2c3e50;
     font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.loading-progress {
+    width: 300px;
+    height: 8px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3498db, #2ecc71);
+    border-radius: 4px;
+    width: 0%;
+    transition: width 0.5s ease-in-out;
 }
 
 /* エラー・成功メッセージ */

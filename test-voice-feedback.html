@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音声フィードバック機能テスト</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        .judge-example {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .judge-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .test-content {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .feedback-content {
+            background: #f0fff4;
+            border-left: 3px solid #27ae60;
+        }
+        .question-content {
+            background: #fff8e1;
+            border-left: 3px solid #f39c12;
+        }
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+        .features-list li {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+        .features-list li::before {
+            content: '✅ ';
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .code-example {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .benefit {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #27ae60;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 音声フィードバック機能テスト</h1>
+        
+        <div class="test-section">
+            <h2>📋 実装された機能</h2>
+            <ul class="features-list">
+                <li>ポジティブフィードバックの音声化</li>
+                <li>質問と組み合わせた音声出力</li>
+                <li>審査員別の音声パーソナリティ</li>
+                <li>拡張された音声コントロールUI</li>
+                <li>一括再生機能（フィードバック＋質問）</li>
+                <li>音量・速度調整機能</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🎭 審査員別フィードバック例</h2>
+            
+            <div class="judge-example">
+                <div class="judge-name">🎓 大学教員</div>
+                <div class="test-content feedback-content">
+                    <strong>フィードバック:</strong> 学術的な観点から素晴らしい点をお伝えします。あなたの研究アプローチは非常に体系的で、社会問題への深い理解が感じられます。理論的な裏付けもしっかりしており、学術的な価値が高い発表でした。
+                </div>
+                <div class="test-content question-content">
+                    <strong>質問:</strong> 学術的な観点から質問させていただきます。この問題についてどのような先行研究を調べましたか？仮説の根拠となるデータはありますか？
+                </div>
+            </div>
+
+            <div class="judge-example">
+                <div class="judge-name">💼 実業家</div>
+                <div class="test-content feedback-content">
+                    <strong>フィードバック:</strong> 実践的な視点から優れている点をお話しします。市場ニーズを的確に捉えた提案で、ビジネスとしての実現可能性が高いと感じました。顧客目線での発想が素晴らしいです。
+                </div>
+                <div class="test-content question-content">
+                    <strong>質問:</strong> 実践的な視点から質問させていただきます。顧客は本当にお金を払ってくれますか？競合他社はどう対抗してくると思いますか？
+                </div>
+            </div>
+
+            <div class="judge-example">
+                <div class="judge-name">💰 ベンチャーキャピタリスト</div>
+                <div class="test-content feedback-content">
+                    <strong>フィードバック:</strong> 投資家の観点から評価できる点をお伝えします。市場規模が大きく、スケーラビリティのあるビジネスモデルです。成長性と投資価値が非常に高い提案だと評価します。
+                </div>
+                <div class="test-content question-content">
+                    <strong>質問:</strong> 投資家の観点から質問させていただきます。この市場は10倍に成長する可能性がありますか？5年後に100億円企業になれますか？
+                </div>
+            </div>
+
+            <div class="judge-example">
+                <div class="judge-name">💻 IT専門家</div>
+                <div class="test-content feedback-content">
+                    <strong>フィードバック:</strong> 技術的な観点から優秀な部分をお話しします。システム設計が論理的で、最新技術の活用方法も適切です。技術的な実現可能性が高く、革新性のある提案です。
+                </div>
+                <div class="test-content question-content">
+                    <strong>質問:</strong> 技術的な観点から質問させていただきます。このシステムはどの技術スタックで構築しますか？セキュリティ対策は十分ですか？
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 新しい音声コントロール</h2>
+            <div class="code-example">
+// 新しいコントロールボタン
+💬 フィードバック  ❓ 質問  ⏸️ 停止
+
+// 音量・速度調整
+🔊 ▬▬▬●▬▬▬ 80%   ⚡ 1.0x
+
+// 一括再生機能
+playAllJudgesFeedback(selectedJudges)
+playAllJudgesQuestions(selectedJudges)
+playAllJudgesComplete(selectedJudges)  // フィードバック→質問の順
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>⚙️ 技術的実装</h2>
+            
+            <h3>フィードバック抽出機能</h3>
+            <div class="code-example">
+extractFeedbackFromResult(judgeType) {
+    // 評価結果から「🎯 ポジティブフィードバック」セクションを抽出
+    const feedbackMatch = evaluation.match(/## 🎯 ポジティブフィードバック\s*([\s\S]*?)(?=## |$)/);
+    // - で始まる項目を抽出して自然な音声に変換
+}
+            </div>
+
+            <h3>審査員別導入メッセージ</h3>
+            <div class="code-example">
+getJudgeIntroduction(judgeType, contentType = 'questions') {
+    if (contentType === 'feedback') {
+        // フィードバック用の導入メッセージ
+        return `${personality.name}として、〇〇の観点から素晴らしい点をお伝えします。`;
+    } else {
+        // 質問用の導入メッセージ  
+        return `${personality.name}として、〇〇の観点から質問させていただきます。`;
+    }
+}
+            </div>
+        </div>
+
+        <div class="benefit">
+            <h2>🌟 ユーザーメリット</h2>
+            <ul>
+                <li><strong>包括的なフィードバック:</strong> 質問だけでなく、ポジティブな評価も音声で聞ける</li>
+                <li><strong>モチベーション向上:</strong> 肯定的なフィードバックが学習意欲を高める</li>
+                <li><strong>選択的再生:</strong> フィードバックか質問か、必要な部分だけ聞ける</li>
+                <li><strong>一括再生:</strong> 複数審査員のフィードバックと質問を効率的に聞ける</li>
+                <li><strong>個性化された体験:</strong> 審査員ごとに異なる音声とメッセージ</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 使用方法</h2>
+            <ol>
+                <li>ピッチ分析を実行して結果を表示</li>
+                <li>各審査員の結果エリアに表示される音声コントロールを使用</li>
+                <li>💬フィードバックボタンでポジティブ評価を聞く</li>
+                <li>❓質問ボタンで深掘り質問を聞く</li>
+                <li>音量・速度を調整して最適な聞き取り環境を設定</li>
+                <li>複数審査員の場合は一括再生機能も利用可能</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        console.log('🎵 音声フィードバック機能テストページが読み込まれました');
+        console.log('📋 実装内容:');
+        console.log('- ポジティブフィードバック抽出・音声化');
+        console.log('- 拡張音声コントロールUI（フィードバック/質問ボタン）');
+        console.log('- 審査員別導入メッセージ');
+        console.log('- 一括再生機能（フィードバック＋質問）');
+        console.log('- 音声コントロールの改良（レイアウト・スタイル）');
+        
+        console.log('\n🎯 利用可能なメソッド:');
+        console.log('- playJudgeFeedback(judgeType)');
+        console.log('- playJudgeQuestions(judgeType)');
+        console.log('- playAllJudgesFeedback(selectedJudges)');
+        console.log('- playAllJudgesComplete(selectedJudges)');
+        console.log('- extractFeedbackFromResult(judgeType)');
+    </script>
+</body>
+</html>
