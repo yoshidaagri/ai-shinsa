@@ -13,7 +13,14 @@ const CONTENT_ANALYSIS_FRAMEWORK = {
             theoreticalFramework: this.extractTheory(audioContent),
             gaps: this.identifyLogicalGaps(slideContent, audioContent),
             passionLevel: this.extractPassion(audioContent),
-            originalityMarkers: this.extractOriginality(slideContent, audioContent)
+            originalityMarkers: this.extractOriginality(slideContent, audioContent),
+            // 新規追加：ビジネス・技術観点の分析
+            marketSize: this.extractMarketInfo(slideContent),
+            revenueModel: this.extractRevenueModel(slideContent),
+            competitiveAdvantage: this.extractCompetitiveInfo(slideContent),
+            technicalApproach: this.extractTechnicalInfo(slideContent),
+            scalabilityFactors: this.extractScalability(slideContent),
+            fundingNeeds: this.extractFundingInfo(slideContent)
         };
         return analysis;
     },
@@ -55,6 +62,126 @@ const CONTENT_ANALYSIS_FRAMEWORK = {
             if (analysis.socialIssue && analysis.solutionApproach) {
                 questions.push(
                     `この解決策が実現したとき、社会にどのような変化をもたらすと期待していますか？`
+                );
+            }
+        }
+        
+        else if (judgeType === 'entrepreneur') {
+            // 実業家向け動的質問生成
+            if (analysis.socialIssue && !analysis.marketSize) {
+                questions.push(
+                    `${analysis.socialIssue}を解決したい顧客は具体的にどのような人たちですか？市場規模はどの程度と見積もっていますか？`
+                );
+            }
+            
+            if (analysis.solutionApproach && !analysis.revenueModel) {
+                questions.push(
+                    `${analysis.solutionApproach}を提供する際、顧客はどのような形でお金を払ってくれると考えていますか？収益モデルを具体的に教えてください。`
+                );
+            }
+            
+            if (analysis.competitiveAdvantage && analysis.originalityMarkers) {
+                questions.push(
+                    `競合他社も同じ問題に取り組んでいると思いますが、あなたのアプローチが勝てる理由は何ですか？`
+                );
+            }
+            
+            if (analysis.passionLevel && !analysis.methodology) {
+                questions.push(
+                    `この事業で一番大変だと思うのはどの部分ですか？それをどうやって乗り越えるつもりですか？`
+                );
+            }
+            
+            if (analysis.solutionApproach && analysis.socialIssue) {
+                questions.push(
+                    `実際にお客さんに使ってもらったことはありますか？使ってもらったらどんな反応でしたか？`
+                );
+            }
+            
+            // 実践的な実行について
+            if (!analysis.methodology && analysis.solutionApproach) {
+                questions.push(
+                    `今日から3ヶ月で何を実現したいですか？そのために明日から何を始めますか？`
+                );
+            }
+        }
+        
+        else if (judgeType === 'vc') {
+            // VC向け動的質問生成
+            if (analysis.marketSize && !analysis.scalabilityFactors) {
+                questions.push(
+                    `この市場で10億円規模の事業にするためには、どのような成長戦略を考えていますか？`
+                );
+            }
+            
+            if (analysis.revenueModel && !analysis.fundingNeeds) {
+                questions.push(
+                    `このビジネスモデルで黒字化するまでにどの程度の資金が必要で、どのタイミングで調達を考えていますか？`
+                );
+            }
+            
+            if (analysis.competitiveAdvantage && analysis.technicalApproach) {
+                questions.push(
+                    `5年後に大きな競合が参入してきたとき、どうやって競争優位性を維持しますか？`
+                );
+            }
+            
+            if (analysis.solutionApproach && !analysis.scalabilityFactors) {
+                questions.push(
+                    `このソリューションは他の地域や国でも展開可能ですか？グローバル展開の可能性はどうですか？`
+                );
+            }
+            
+            if (analysis.passionLevel && analysis.originalityMarkers) {
+                questions.push(
+                    `この事業に10年間コミットできますか？途中で諦めたくなったときの支えは何ですか？`
+                );
+            }
+            
+            // 投資家が気にするリスク要因
+            if (analysis.technicalApproach && !analysis.methodology) {
+                questions.push(
+                    `この事業の最大のリスクは何で、それをどのようにミティゲートしますか？`
+                );
+            }
+        }
+        
+        else if (judgeType === 'tech_expert') {
+            // IT専門家向け動的質問生成
+            if (analysis.technicalApproach && !analysis.scalabilityFactors) {
+                questions.push(
+                    `システムのアーキテクチャはどうなっていますか？ユーザーが1万人、10万人になったときの技術的課題は？`
+                );
+            }
+            
+            if (analysis.dataPresented && !analysis.methodology) {
+                questions.push(
+                    `データの収集・保存・処理はどのように行いますか？GDPR等のプライバシー規制への対応は考えていますか？`
+                );
+            }
+            
+            if (analysis.solutionApproach && analysis.technicalApproach) {
+                questions.push(
+                    `このソリューションの技術的な差別化ポイントは何ですか？オープンソースの既存ソリューションとの違いは？`
+                );
+            }
+            
+            if (analysis.originalityMarkers && !analysis.technicalApproach) {
+                questions.push(
+                    `AIや機械学習の活用は考えていますか？どのようなデータでどんな予測・分析を行いますか？`
+                );
+            }
+            
+            if (analysis.scalabilityFactors && analysis.technicalApproach) {
+                questions.push(
+                    `システム開発・運用チームの体制はどうしますか？技術的負債をどう管理しますか？`
+                );
+            }
+            
+            // セキュリティ・信頼性について
+            if (analysis.dataPresented && analysis.solutionApproach) {
+                questions.push(
+                    `セキュリティ対策はどうしますか？認証・認可、データ暗号化、アクセス制御の方針を教えてください。`
                 );
             }
         }
@@ -112,6 +239,43 @@ const CONTENT_ANALYSIS_FRAMEWORK = {
         if (slideContent && !audioContent) gaps.push('audio_missing');
         if (audioContent && !slideContent) gaps.push('slide_missing');
         return gaps;
+    },
+    
+    // 新規追加：ビジネス・技術情報の抽出関数
+    extractMarketInfo: function(content) {
+        if (!content) return null;
+        const keywords = ['市場', '顧客', 'ユーザー', '利用者', 'market', 'customer'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+
+    extractRevenueModel: function(content) {
+        if (!content) return null;
+        const keywords = ['収益', '売上', '料金', '価格', '課金', 'revenue', 'pricing', 'subscription'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+
+    extractCompetitiveInfo: function(content) {
+        if (!content) return null;
+        const keywords = ['競合', '他社', '違い', '優位', 'competitive', 'advantage', 'differentiation'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+
+    extractTechnicalInfo: function(content) {
+        if (!content) return null;
+        const keywords = ['技術', 'システム', 'AI', 'アプリ', 'データ', 'technology', 'system', 'app'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+
+    extractScalability: function(content) {
+        if (!content) return null;
+        const keywords = ['拡大', '成長', '展開', 'scale', 'growth', 'expansion'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
+    },
+
+    extractFundingInfo: function(content) {
+        if (!content) return null;
+        const keywords = ['資金', '投資', '調達', 'funding', 'investment', 'capital'];
+        return keywords.some(keyword => content.toLowerCase().includes(keyword));
     }
 };
 
@@ -238,7 +402,19 @@ const JUDGE_PERSONALITIES = {
             "どのような困難を予想していますか？リスクヘッジの方法はありますか？",
             "創業チームのスキルセットで足りない部分はありませんか？",
             "キャッシュフローがプラスになるのはいつ頃を予定していますか？"
-        ]
+        ],
+        // 動的質問生成機能
+        generateAdaptiveQuestions: function(slideContent, audioContent) {
+            const analysis = CONTENT_ANALYSIS_FRAMEWORK.analyzeContent(slideContent, audioContent);
+            const dynamicQuestions = CONTENT_ANALYSIS_FRAMEWORK.generateQuestions(analysis, 'entrepreneur');
+            
+            // 動的質問が生成されない場合は基本質問を選択
+            if (dynamicQuestions.length === 0) {
+                return this.sampleQuestions.slice(0, 3);
+            }
+            
+            return dynamicQuestions;
+        }
     },
     
     vc: {
@@ -293,7 +469,19 @@ const JUDGE_PERSONALITIES = {
             "どの程度の投資が必要ですか？資金調達計画とマイルストーンを教えてください。",
             "類似のビジネスモデルで成功した事例はありますか？失敗事例から学んだことは？",
             "エグジット戦略はどのように考えていますか？IPOかM&Aか、時期はいつ頃を想定していますか？"
-        ]
+        ],
+        // 動的質問生成機能
+        generateAdaptiveQuestions: function(slideContent, audioContent) {
+            const analysis = CONTENT_ANALYSIS_FRAMEWORK.analyzeContent(slideContent, audioContent);
+            const dynamicQuestions = CONTENT_ANALYSIS_FRAMEWORK.generateQuestions(analysis, 'vc');
+            
+            // 動的質問が生成されない場合は基本質問を選択
+            if (dynamicQuestions.length === 0) {
+                return this.sampleQuestions.slice(0, 3);
+            }
+            
+            return dynamicQuestions;
+        }
     },
     
     tech_expert: {
@@ -348,7 +536,19 @@ const JUDGE_PERSONALITIES = {
             "AIや機械学習の活用は考えていますか？学習データの品質と偏見対策は？",
             "開発チームの技術レベルは十分ですか？外部委託か内製かの判断基準は？",
             "システムの運用・保守・アップデートの計画はありますか？技術的負債をどう管理しますか？"
-        ]
+        ],
+        // 動的質問生成機能
+        generateAdaptiveQuestions: function(slideContent, audioContent) {
+            const analysis = CONTENT_ANALYSIS_FRAMEWORK.analyzeContent(slideContent, audioContent);
+            const dynamicQuestions = CONTENT_ANALYSIS_FRAMEWORK.generateQuestions(analysis, 'tech_expert');
+            
+            // 動的質問が生成されない場合は基本質問を選択
+            if (dynamicQuestions.length === 0) {
+                return this.sampleQuestions.slice(0, 3);
+            }
+            
+            return dynamicQuestions;
+        }
     }
 };
 
